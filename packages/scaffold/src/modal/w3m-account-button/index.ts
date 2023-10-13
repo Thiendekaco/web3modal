@@ -1,5 +1,5 @@
 import {
-  AccountController,
+  AccountController, AccountsController,
   AssetController,
   CoreHelperUtil,
   ModalController,
@@ -34,6 +34,8 @@ export class W3mAccountButton extends LitElement {
 
   @state() private network = NetworkController.state.caipNetwork
 
+  @state() private accountList = AccountsController.state.accounts
+
   // -- Lifecycle ----------------------------------------- //
   public constructor() {
     super()
@@ -46,6 +48,7 @@ export class W3mAccountButton extends LitElement {
             this.profileName = val.profileName
             this.profileImage = val.profileImage
             this.balanceSymbol = val.balanceSymbol
+            this.accountList = []
           } else {
             this.address = ''
             this.balanceVal = ''
@@ -54,7 +57,16 @@ export class W3mAccountButton extends LitElement {
             this.balanceSymbol = ''
           }
         }),
-        NetworkController.subscribeKey('caipNetwork', val => (this.network = val))
+
+        NetworkController.subscribeKey('caipNetwork', val => (this.network = val)),
+        AccountsController.subscribeKey('accounts', value => {
+          this.accountList = value
+          this.address = ''
+          this.balanceVal = ''
+          this.profileName = ''
+          this.profileImage = ''
+          this.balanceSymbol = ''
+        })
       ]
     )
   }
@@ -68,7 +80,7 @@ export class W3mAccountButton extends LitElement {
     const networkImage = this.networkImages[this.network?.imageId ?? '']
     const showBalance = this.balance === 'show'
 
-    return html`
+    return this.address ? html`
       <wui-account-button
         .disabled=${Boolean(this.disabled)}
         address=${ifDefined(this.profileName ?? this.address)}
@@ -81,12 +93,31 @@ export class W3mAccountButton extends LitElement {
         @click=${this.onClick.bind(this)}
       >
       </wui-account-button>
-    `
+    ` : this.accountList.map((account, index) => (
+        html`
+           <wui-account-button
+            .disabled=${Boolean(this.disabled)}
+            address=${ifDefined(account.profileName ?? account.address)}
+            ?isProfileName=${Boolean(account.profileName)}
+            networkSrc=${ifDefined(networkImage)}
+            avatarSrc=${ifDefined(account.profileImage)}
+            balance=${showBalance
+                ? CoreHelperUtil.formatBalance(account.balance, account.balanceSymbol)
+                : ''}
+            @click=${() => this.onClickOfPolkadot(index)}
+          >
+        `
+    ))
   }
 
   // -- Private ------------------------------------------- //
   private onClick() {
     ModalController.open()
+  }
+
+  private  onClickOfPolkadot( index : number){
+    ModalController.open()
+    AccountsController.setIsAccountIsSelected(index)
   }
 }
 

@@ -56,6 +56,8 @@ export class W3mRouter extends LitElement {
     switch (this.view) {
       case 'Connect':
         return html`<w3m-connect-view></w3m-connect-view>`
+      case 'ConnectingWalletConnect4Polkadot' :
+        return html`<w3m-connecting-wc-view></w3m-connecting-wc-view>`
       case 'ConnectingWalletConnect':
         return html`<w3m-connecting-wc-view></w3m-connecting-wc-view>`
       case 'ConnectingExternal':

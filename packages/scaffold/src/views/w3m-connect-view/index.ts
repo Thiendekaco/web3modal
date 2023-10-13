@@ -39,7 +39,8 @@ export class W3mConnectView extends LitElement {
   public override render() {
     return html`
       <wui-flex flexDirection="column" padding="s" gap="xs">
-        ${this.walletConnectConnectorTemplate()} ${this.recentTemplate()}
+        ${this.walletConnectConnectorTemplate()}
+        ${this.walletConnectConnector4PolkadotTemplate()} ${this.recentTemplate()}
         ${this.announcedTemplate()} ${this.injectedTemplate()} ${this.featuredTemplate()}
         ${this.customTemplate()} ${this.recommendedTemplate()} ${this.connectorsTemplate()}
         ${this.allWalletsTemplate()}
@@ -54,6 +55,27 @@ export class W3mConnectView extends LitElement {
       return null
     }
     const connector = this.connectors.find(c => c.type === 'WALLET_CONNECT')
+    if (!connector) {
+      return null
+    }
+
+    return html`
+      <wui-list-wallet
+        imageSrc=${ifDefined(AssetUtil.getConnectorImage(connector))}
+        name=${connector.name ?? 'Unknown'}
+        @click=${() => this.onConnector(connector)}
+        tagLabel="qr code"
+        tagVariant="main"
+      >
+      </wui-list-wallet>
+    `
+  }
+
+  private walletConnectConnector4PolkadotTemplate() {
+    if (CoreHelperUtil.isMobile()) {
+      return null
+    }
+    const connector = this.connectors.find(c => c.type === 'WALLET_CONNECT_POLKADOT')
     if (!connector) {
       return null
     }
@@ -170,7 +192,7 @@ export class W3mConnectView extends LitElement {
 
   private connectorsTemplate() {
     return this.connectors.map(connector => {
-      if (['WALLET_CONNECT', 'INJECTED', 'EIP6963'].includes(connector.type)) {
+      if (['WALLET_CONNECT', 'INJECTED', 'EIP6963', 'WALLET_CONNECT_POLKADOT'].includes(connector.type)) {
         return null
       }
 
@@ -234,8 +256,10 @@ export class W3mConnectView extends LitElement {
       } else {
         RouterController.push('ConnectingWalletConnect')
       }
-    } else {
-      RouterController.push('ConnectingExternal', { connector })
+    } else if( connector.type === "WALLET_CONNECT_POLKADOT") {
+      RouterController.push('ConnectingWalletConnect4Polkadot')
+    }else{
+      RouterController.push('ConnectingExternal')
     }
   }
 

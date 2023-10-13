@@ -7,10 +7,11 @@ import type {
   PublicStateControllerState,
   ThemeControllerState,
   ThemeMode,
-  ThemeVariables
+  ThemeVariables,
 } from '@web3modal/core'
 import {
   AccountController,
+  AccountsController,
   ApiController,
   BlockchainApiController,
   ConnectionController,
@@ -114,6 +115,11 @@ export class Web3ModalScaffold {
   protected setBalance: (typeof AccountController)['setBalance'] = (balance, balanceSymbol) => {
     AccountController.setBalance(balance, balanceSymbol)
   }
+
+  protected updateAccounts : ( typeof AccountsController)['setIsAccountToList'] = ( accounts ) => {
+    AccountsController.setIsAccountToList(accounts)
+  }
+
 
   protected setProfileName: (typeof AccountController)['setProfileName'] = profileName => {
     AccountController.setProfileName(profileName)

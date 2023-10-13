@@ -1,4 +1,5 @@
 // -- Controllers -------------------------------------------------------------
+
 export { ModalController } from './src/controllers/ModalController.js'
 export type {
   ModalControllerArguments,
@@ -46,10 +47,13 @@ export { BlockchainApiController } from './src/controllers/BlockchainApiControll
 export { PublicStateController } from './src/controllers/PublicStateController.js'
 export type { PublicStateControllerState } from './src/controllers/PublicStateController.js'
 
+export { AccountsController } from './src/controllers/AccountsController.js'
+export type { AccountsControllerState } from './src/controllers/AccountsController.js'
+
 // -- Utils -------------------------------------------------------------------
 export { AssetUtil } from './src/utils/AssetUtil.js'
 export { ConstantsUtil } from './src/utils/ConstantsUtil.js'
 export { CoreHelperUtil } from './src/utils/CoreHelperUtil.js'
 export { StorageUtil } from './src/utils/StorageUtil.js'
-
+export * from './src/utils/Network4PolkadotUtil.js'
 export type * from './src/utils/TypeUtils.js'

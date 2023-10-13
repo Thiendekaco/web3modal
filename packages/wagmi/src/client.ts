@@ -11,7 +11,10 @@ import {
   watchAccount,
   watchNetwork
 } from '@wagmi/core'
-import { mainnet } from '@wagmi/core/chains'
+import {mainnet} from '@wagmi/core/chains'
+import type { SessionTypes } from "@walletconnect/types";
+import Network4PolkadotUtil from "@web3modal/core/src/utils/Network4PolkadotUtil";
+import UniversalProvider from '@walletconnect/universal-provider'
 import type {
   CaipAddress,
   CaipNetwork,
@@ -23,7 +26,7 @@ import type {
   PublicStateControllerState,
   Token
 } from '@web3modal/scaffold'
-import { Web3ModalScaffold } from '@web3modal/scaffold'
+import { Web3ModalScaffold} from '@web3modal/scaffold'
 import type { EIP6963Connector } from './connectors/EIP6963Connector.js'
 import {
   ADD_CHAIN_METHOD,
@@ -44,10 +47,14 @@ import {
   NetworkImageIds
 } from './utils/presets.js'
 
+
+
+
 // -- Types ---------------------------------------------------------------------
 export interface Web3ModalClientOptions extends Omit<LibraryOptions, 'defaultChain' | 'tokens'> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   wagmiConfig: Config<any, any>
+  chainsPolkadot ?: string[],
   chains?: Chain[]
   defaultChain?: Chain
   chainImages?: Record<number, string>
@@ -84,10 +91,14 @@ interface Wallet {
 export class Web3Modal extends Web3ModalScaffold {
   private hasSyncedConnectedAccount = false
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  private walletConnectSession : SessionTypes.Struct | undefined;
+
   private options: Web3ModalClientOptions | undefined = undefined
 
+
   public constructor(options: Web3ModalClientOptions) {
-    const { wagmiConfig, chains, defaultChain, tokens, _sdkVersion, ...w3mOptions } = options
+    const { wagmiConfig, chains, defaultChain, tokens, _sdkVersion, chainsPolkadot, ...w3mOptions } = options
 
     if (!wagmiConfig) {
       throw new Error('web3modal:constructor - wagmiConfig is undefined')
@@ -150,6 +161,33 @@ export class Web3Modal extends Web3ModalScaffold {
         const chainId = caipNetworkIdToNumber(this.getCaipNetwork()?.id)
 
         await connect({ connector, chainId })
+
+      },
+
+      connectWalletConnect4Polkadot: async onUri => {
+        const provider = await UniversalProvider.init({
+          projectId: w3mOptions.projectId,
+          relayUrl: 'wss://relay.walletconnect.com'
+        })
+
+        const params = {
+          requiredNamespaces: {
+            polkadot: {
+              methods: ['polkadot_signTransaction', 'polkadot_signMessage'],
+              chains: chainsPolkadot?.map((network) => (
+                  `polkadot:${Network4PolkadotUtil[network as keyof typeof Network4PolkadotUtil]}`
+              )),
+              events: ['chainChanged", "accountsChanged']
+            }
+          }
+        }
+
+        const { uri, approval } = await provider.client.connect(params)
+        // eslint-disable-next-line no-unused-expressions
+        uri && onUri( uri )
+        this.walletConnectSession = await approval();
+        this.syncNetwork4Polkadot()
+        this.syncAccount4Polkadot()
       },
 
       connectExternal: async ({ id, provider, info }) => {
@@ -197,8 +235,10 @@ export class Web3Modal extends Web3ModalScaffold {
     this.syncConnectors(wagmiConfig.connectors)
     this.listenConnectors(wagmiConfig.connectors)
 
-    watchAccount(() => this.syncAccount())
-    watchNetwork(() => this.syncNetwork())
+      watchAccount(() => this.syncAccount())
+      watchNetwork(() => this.syncNetwork())
+
+
   }
 
   // -- Public ------------------------------------------------------------------
@@ -239,6 +279,7 @@ export class Web3Modal extends Web3ModalScaffold {
 
   private async syncAccount() {
     const { address, isConnected } = getAccount()
+
     const { chain } = getNetwork()
     this.resetAccount()
     if (isConnected && address && chain) {
@@ -255,6 +296,48 @@ export class Web3Modal extends Web3ModalScaffold {
       this.resetWcConnection()
       this.resetNetwork()
     }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  private syncAccount4Polkadot (){
+    if(!this.walletConnectSession || !this.options?.chainsPolkadot ) { return; }
+    const walletConnectAccount = Object.values(this.walletConnectSession.namespaces)
+        .map(namespace => namespace.accounts)
+        .flat()
+    const CAIPId = Network4PolkadotUtil[ this.options?.chainsPolkadot[0] as keyof typeof Network4PolkadotUtil ]
+    const walletAccountfillter = walletConnectAccount.filter((account) => (
+        account.includes(CAIPId)
+    )).map(( account) => ( account.replace(`polkadot:${CAIPId}:`, "")))
+
+    if(walletConnectAccount.length > 0  && this.options?.chainsPolkadot[0] ){
+      this.resetAccount()
+         walletAccountfillter.forEach(  ( account, index) => {
+          const caipAddress: CaipAddress = `polkadot:${CAIPId}:${account}`
+          this.getApprovedCaipNetworksData()
+          this.hasSyncedConnectedAccount = true
+          this.updateAccounts({
+            isConnected : true,
+            caipAddress,
+            address: account,
+            balance: '0x0',
+            profileName: `Account ${index + 1}`
+          })
+        })
+      } else {
+        this.resetWcConnection()
+        this.resetNetwork()
+    }
+
+  }
+  
+  private syncNetwork4Polkadot(){
+    if(!this.walletConnectSession || !this.options?.chainsPolkadot) {return;}
+    this.setCaipNetwork({
+      id : `polkadot : ${Network4PolkadotUtil[ this.options?.chainsPolkadot[0] as keyof typeof Network4PolkadotUtil ]}`,
+      name : this.options.chainsPolkadot[0],
+      imageId : '',
+      imageUrl : ''
+    })
   }
 
   private async syncNetwork() {
@@ -326,6 +409,16 @@ export class Web3Modal extends Web3ModalScaffold {
           imageUrl: this.options?.connectorImages?.[id],
           name: ConnectorNamesMap[id] ?? name,
           type: ConnectorTypesMap[id] ?? 'EXTERNAL'
+        })
+      }
+      if(id === WALLET_CONNECT_CONNECTOR_ID){
+        w3mConnectors.push({
+          id : 'WALLET_CONNECT_POLKADOT',
+          explorerId: ConnectorExplorerIds[id],
+          imageId: ConnectorImageIds[id],
+          imageUrl: this.options?.connectorImages?.[id],
+          name: 'WalletConnect POLKADOT',
+          type: 'WALLET_CONNECT_POLKADOT'
         })
       }
     })

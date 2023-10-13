@@ -13,6 +13,7 @@ export interface ConnectExternalOptions {
 
 export interface ConnectionControllerClient {
   connectWalletConnect: (onUri: (uri: string) => void) => Promise<void>
+  connectWalletConnect4Polkadot : (onUri: (uri: string) => void) => Promise<void>
   disconnect: () => Promise<void>
   connectExternal?: (options: ConnectExternalOptions) => Promise<void>
   checkInjectedInstalled?: (ids?: string[]) => boolean
@@ -20,7 +21,8 @@ export interface ConnectionControllerClient {
 
 export interface ConnectionControllerState {
   _client?: ConnectionControllerClient
-  wcUri?: string
+  wcUri?: string,
+  wcUriPolkadot ?: string,
   wcPromise?: Promise<void>
   wcPairingExpiry?: number
   wcLinking?: {
@@ -67,6 +69,12 @@ export const ConnectionController = {
     state.wcPromise = this._getClient().connectWalletConnect(uri => {
       state.wcUri = uri
       state.wcPairingExpiry = CoreHelperUtil.getPairingExpiry()
+    })
+  },
+
+  connectWalletConnect4Polkadot() {
+    state.wcPromise = this._getClient().connectWalletConnect4Polkadot( uri =>{
+      state.wcUriPolkadot = uri
     })
   },
 

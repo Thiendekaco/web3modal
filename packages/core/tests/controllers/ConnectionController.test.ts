@@ -11,6 +11,7 @@ const client: ConnectionControllerClient = {
     onUri(walletConnectUri)
     await Promise.resolve()
   },
+  connectWalletConnect4Polkadot : async () => {},
   disconnect: async () => Promise.resolve(),
   connectExternal: async _id => Promise.resolve(),
   checkInjectedInstalled: _id => true
@@ -18,6 +19,7 @@ const client: ConnectionControllerClient = {
 
 const partialClient: ConnectionControllerClient = {
   connectWalletConnect: async () => Promise.resolve(),
+  connectWalletConnect4Polkadot : async () => Promise.resolve(),
   disconnect: async () => Promise.resolve()
 }
 

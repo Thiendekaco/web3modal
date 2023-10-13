@@ -21,6 +21,8 @@ export class W3mConnectingWcView extends LitElement {
 
   private wallet = RouterController.state.data?.wallet
 
+  private view = RouterController.state.view
+
   // -- State & Properties -------------------------------- //
   @state() private platform?: Platform = undefined
 
@@ -39,6 +41,12 @@ export class W3mConnectingWcView extends LitElement {
   // -- Render -------------------------------------------- //
   public override render() {
     if (!this.wallet) {
+      if(this.view === 'ConnectingWalletConnect4Polkadot') {
+        // eslint-disable-next-line no-console
+        return html`
+          <w3m-connecting-wc-qrcode-polkadot></w3m-connecting-wc-qrcode-polkadot>`
+      }
+
       return html`<w3m-connecting-wc-qrcode></w3m-connecting-wc-qrcode>`
     }
 
@@ -56,6 +64,7 @@ export class W3mConnectingWcView extends LitElement {
       const { wcPairingExpiry } = ConnectionController.state
       if (retry || CoreHelperUtil.isPairingExpired(wcPairingExpiry)) {
         ConnectionController.connectWalletConnect()
+        ConnectionController.connectWalletConnect4Polkadot()
         await ConnectionController.state.wcPromise
         this.storeWalletConnectDeeplink()
         ModalController.close()

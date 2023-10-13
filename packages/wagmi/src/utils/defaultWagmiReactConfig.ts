@@ -19,7 +19,7 @@ export function defaultWagmiConfig({ projectId, chains, metadata }: ConfigOption
     connectors: [
       new WalletConnectConnector({ chains, options: { projectId, showQrModal: false, metadata } }),
       new InjectedConnector({ chains, options: { shimDisconnect: true } }),
-      new CoinbaseWalletConnector({ chains, options: { appName: metadata?.name ?? 'Unknown' } })
+      new CoinbaseWalletConnector({ chains, options: { appName: metadata?.name ?? 'Unknown' } }),
     ],
     publicClient
   })

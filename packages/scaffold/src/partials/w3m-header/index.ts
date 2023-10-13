@@ -16,6 +16,7 @@ function headings() {
     Account: undefined,
     ConnectingExternal: name ?? 'Connect Wallet',
     ConnectingWalletConnect: name ?? 'WalletConnect',
+    ConnectingWalletConnect4Polkadot : name ?? 'WalletConnect for Polkadot',
     Networks: 'Choose Network',
     SwitchNetwork: networkName ?? 'Switch Network',
     AllWallets: 'All Wallets',

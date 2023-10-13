@@ -1,5 +1,5 @@
 import {
-  AccountController,
+  AccountController, AccountsController,
   AssetController,
   ConnectionController,
   CoreHelperUtil,
@@ -38,6 +38,11 @@ export class W3mAccountView extends LitElement {
 
   @state() private disconecting = false
 
+  @state() private accountList = AccountsController.state.accounts
+
+  @state() private index = AccountsController.state.accountIsSelected
+
+
   public constructor() {
     super()
     this.usubscribe.push(
@@ -58,7 +63,11 @@ export class W3mAccountView extends LitElement {
         if (val?.id) {
           this.network = val
         }
-      })
+      }),
+       AccountsController.subscribe( value => {
+         this.index = value.accountIsSelected
+         this.accountList = value.accounts
+       })
     )
   }
 
@@ -68,8 +77,19 @@ export class W3mAccountView extends LitElement {
 
   // -- Render -------------------------------------------- //
   public override render() {
-    if (!this.address) {
-      throw new Error('w3m-account-view: No account provided')
+    if(this.accountList[this.index] && this.accountList.length > 0 ){
+      const account = this.accountList[this.index];
+      if(account){
+        this.address = account.address
+        this.profileImage = account.profileImage
+        this.profileName = account.profileName
+        this.balance = account.balance
+        this.balanceSymbol = account.balanceSymbol
+      }
+
+    }
+    if(!this.address){
+      throw new Error('No account provide')
     }
 
     const networkImage = this.networkImages[this.network?.imageId ?? '']

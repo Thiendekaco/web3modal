@@ -1,4 +1,4 @@
-import { AccountController } from '@web3modal/core'
+import {AccountController, AccountsController} from '@web3modal/core'
 import { LitElement, html } from 'lit'
 import { customElement, property, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
@@ -23,13 +23,18 @@ export class W3mButton extends LitElement {
 
   @state() private isAccount = AccountController.state.isConnected
 
+  @state() private isAccountList = AccountsController.state.accounts.length > 0
+
   // -- Lifecycle ----------------------------------------- //
   public constructor() {
     super()
     this.unsubscribe.push(
       AccountController.subscribeKey('isConnected', val => {
         this.isAccount = val
-      })
+      }),
+       AccountsController.subscribeKey('accounts', value => {
+         this.isAccountList = value.length > 0;
+       })
     )
   }
 
@@ -39,7 +44,7 @@ export class W3mButton extends LitElement {
 
   // -- Render -------------------------------------------- //
   public override render() {
-    return this.isAccount
+    return this.isAccount || this.isAccountList
       ? html`
           <w3m-account-button
             .disabled=${Boolean(this.disabled)}

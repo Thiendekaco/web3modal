@@ -5,6 +5,7 @@ import { ApiController } from './ApiController.js'
 import { PublicStateController } from './PublicStateController.js'
 import type { RouterControllerState } from './RouterController.js'
 import { RouterController } from './RouterController.js'
+import { AccountsController } from "./AccountsController.js";
 
 // -- Types --------------------------------------------- //
 export interface ModalControllerState {
@@ -37,7 +38,7 @@ export const ModalController = {
 
     if (options?.view) {
       RouterController.reset(options.view)
-    } else if (AccountController.state.isConnected) {
+    } else if (AccountController.state.isConnected || AccountsController.state.accounts.length > 0) {
       RouterController.reset('Account')
     } else {
       RouterController.reset('Connect')

@@ -4,36 +4,41 @@ import {
   useWeb3Modal,
   useWeb3ModalState,
   useWeb3ModalTheme
-} from '@web3modal/wagmi/react'
+} from '@web3modal/wagmi/exports/react'
 import { WagmiConfig } from 'wagmi'
 import { arbitrum, mainnet } from 'wagmi/chains'
 
-// @ts-expect-error 1. Get projectId
-const projectId = import.meta.env.VITE_PROJECT_ID
+
+const projectId = '16c6ad72b95e09bfdddfde13bf7f90b4'
 if (!projectId) {
   throw new Error('VITE_PROJECT_ID is not set')
 }
 
 // 2. Create wagmiConfig
 const chains = [mainnet, arbitrum]
+const chainsPolkadot = [ 'polkadot', 'kusama' ]
 const wagmiConfig = defaultWagmiConfig({
   chains,
   projectId,
   metadata: {
-    name: 'Web3Modal React Example'
+    name: 'Web3Modal React Example',
+    url : 'http://localhost:3001/'
   }
 })
 
+
+
 // 3. Create modal
 createWeb3Modal({
-  wagmiConfig,
-  projectId,
-  chains,
-  themeMode: 'light',
-  themeVariables: {
-    '--w3m-color-mix': '#00DCFF',
-    '--w3m-color-mix-strength': 20
-  }
+    wagmiConfig,
+    chainsPolkadot,
+    projectId,
+    chains,
+    themeMode: 'light',
+    themeVariables: {
+        '--w3m-color-mix': '#00DCFF',
+        '--w3m-color-mix-strength': 20
+    }
 })
 
 export default function App() {

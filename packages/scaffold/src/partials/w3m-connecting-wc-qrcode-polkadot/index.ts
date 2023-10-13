@@ -5,8 +5,8 @@ import { ifDefined } from 'lit/directives/if-defined.js'
 import { W3mConnectingWidget } from '../../utils/w3m-connecting-widget/index.js'
 import styles from './styles.js'
 
-@customElement('w3m-connecting-wc-qrcode')
-export class W3mConnectingWcQrcode extends W3mConnectingWidget {
+@customElement('w3m-connecting-wc-qrcode-polkadot')
+export class W3mConnectingWcQrcodePolkadot extends W3mConnectingWidget {
   public static override styles = styles
 
   public constructor() {
@@ -23,17 +23,18 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
   public override render() {
     this.onRenderProxy()
 
+
     return html`
       <wui-flex padding="xl" flexDirection="column" gap="xl" alignItems="center">
         <wui-shimmer borderRadius="l" width="100%"> ${this.qrCodeTemplate()} </wui-shimmer>
 
         <wui-text variant="paragraph-500" color="fg-100">
-          Scan this QR Code with your phone
+          Scan this QR Code with your phone_
         </wui-text>
 
-        <wui-button variant="fullWidth" @click=${this.onCopyUri}>
+        <wui-button variant="fullWidth" @click=${this.onCopyUriPolkadot}>
           <wui-icon size="sm" color="inherit" slot="iconLeft" name="copy"></wui-icon>
-          Copy Link
+          Copy Link_
         </wui-button>
       </wui-flex>
 
@@ -43,7 +44,9 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
 
   // -- Private ------------------------------------------- //
   private onRenderProxy() {
-    if (this.uri) {
+
+    if (!this.ready && this.uriPolkadot) {
+
       this.timeout = setTimeout(() => {
         this.ready = true
       }, 200)
@@ -51,12 +54,9 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
   }
 
   private qrCodeTemplate() {
-    // eslint-disable-next-line no-console
-    console.log(this.uri)
-    if (!this.uri || !this.ready) {
+    if (!this.ready || !this.uriPolkadot) {
       return null
     }
-
     const size = this.getBoundingClientRect().width - 40
     const alt = this.wallet ? this.wallet.name : undefined
     ConnectionController.setWcLinking(undefined)
@@ -65,7 +65,7 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
     return html`<wui-qr-code
       size=${size}
       theme=${ThemeController.state.themeMode}
-      uri=${this.uri}
+      uri=${this.uriPolkadot}
       imageSrc=${ifDefined(AssetUtil.getWalletImage(this.wallet))}
       alt=${ifDefined(alt)}
     ></wui-qr-code>`
@@ -78,6 +78,6 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
 
 declare global {
   interface HTMLElementTagNameMap {
-    'w3m-connecting-wc-qrcode': W3mConnectingWcQrcode
+    'w3m-connecting-wc-qrcode-polkadot': W3mConnectingWcQrcodePolkadot
   }
 }

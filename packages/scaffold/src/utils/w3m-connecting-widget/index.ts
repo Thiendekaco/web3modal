@@ -48,6 +48,8 @@ export class W3mConnectingWidget extends LitElement {
   // -- State & Properties -------------------------------- //
   @state() protected uri = ConnectionController.state.wcUri
 
+  @state() protected uriPolkadot =  ConnectionController.state.wcUriPolkadot
+
   @state() protected error = ConnectionController.state.wcError
 
   @state() protected ready = false
@@ -66,6 +68,13 @@ export class W3mConnectingWidget extends LitElement {
       ...[
         ConnectionController.subscribeKey('wcUri', val => {
           this.uri = val
+          if (this.isRetrying && this.onRetry) {
+            this.isRetrying = false
+            this.onConnect?.()
+          }
+        }),
+        ConnectionController.subscribeKey('wcUriPolkadot', val => {
+          this.uriPolkadot = val
           if (this.isRetrying && this.onRetry) {
             this.isRetrying = false
             this.onConnect?.()
@@ -200,6 +209,17 @@ export class W3mConnectingWidget extends LitElement {
     try {
       if (this.uri) {
         CoreHelperUtil.copyToClopboard(this.uri)
+        SnackController.showSuccess('Link copied')
+      }
+    } catch {
+      SnackController.showError('Failed to copy')
+    }
+  }
+
+  protected onCopyUriPolkadot() {
+    try {
+      if (this.uriPolkadot) {
+        CoreHelperUtil.copyToClopboard(this.uriPolkadot)
         SnackController.showSuccess('Link copied')
       }
     } catch {
