@@ -11,16 +11,20 @@ const client: ConnectionControllerClient = {
     onUri(walletConnectUri)
     await Promise.resolve()
   },
-  connectWalletConnect4Polkadot : async () => {},
+  connectWalletConnect4Polkadot : async () => Promise.resolve(),
   disconnect: async () => Promise.resolve(),
   connectExternal: async _id => Promise.resolve(),
-  checkInjectedInstalled: _id => true
+  checkInjectedInstalled: _id => true,
+  signingForEvmWallet : async () => Promise.resolve(''),
+  signingForPolkadot : async () => Promise.resolve('')
 }
 
 const partialClient: ConnectionControllerClient = {
   connectWalletConnect: async () => Promise.resolve(),
   connectWalletConnect4Polkadot : async () => Promise.resolve(),
-  disconnect: async () => Promise.resolve()
+  disconnect: async () => Promise.resolve(),
+  signingForEvmWallet : async () => Promise.resolve(''),
+  signingForPolkadot : async () => Promise.resolve('')
 }
 
 // -- Tests --------------------------------------------------------------------

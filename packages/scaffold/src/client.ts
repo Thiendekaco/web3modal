@@ -133,6 +133,10 @@ export class Web3ModalScaffold {
     AccountController.resetAccount()
   }
 
+  protected resetAccountPolkadot : (typeof  AccountsController)['resetAccount'] = () =>{
+    AccountsController.resetAccount()
+  }
+
   protected setCaipNetwork: (typeof NetworkController)['setCaipNetwork'] = caipNetwork => {
     NetworkController.setCaipNetwork(caipNetwork)
   }

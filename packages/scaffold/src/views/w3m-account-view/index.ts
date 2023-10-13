@@ -14,6 +14,8 @@ import { customElement, state } from 'lit/decorators.js'
 import { ifDefined } from 'lit/directives/if-defined.js'
 import styles from './styles.js'
 
+
+
 @customElement('w3m-account-view')
 export class W3mAccountView extends LitElement {
   public static override styles = styles
@@ -28,7 +30,7 @@ export class W3mAccountView extends LitElement {
 
   @state() private profileImage = AccountController.state.profileImage
 
-  @state() private profileName = AccountController.state.profileName
+
 
   @state() private balance = AccountController.state.balance
 
@@ -37,6 +39,8 @@ export class W3mAccountView extends LitElement {
   @state() private network = NetworkController.state.caipNetwork
 
   @state() private disconecting = false
+
+  @state() private signing = false;
 
   @state() private accountList = AccountsController.state.accounts
 
@@ -51,7 +55,6 @@ export class W3mAccountView extends LitElement {
           if (val.address) {
             this.address = val.address
             this.profileImage = val.profileImage
-            this.profileName = val.profileName
             this.balance = val.balance
             this.balanceSymbol = val.balanceSymbol
           } else {
@@ -82,7 +85,6 @@ export class W3mAccountView extends LitElement {
       if(account){
         this.address = account.address
         this.profileImage = account.profileImage
-        this.profileName = account.profileName
         this.balance = account.balance
         this.balanceSymbol = account.balanceSymbol
       }
@@ -110,9 +112,7 @@ export class W3mAccountView extends LitElement {
         <wui-flex flexDirection="column" alignItems="center">
           <wui-flex gap="3xs" alignItems="center" justifyContent="center">
             <wui-text variant="large-600" color="fg-100">
-              ${this.profileName
-                ? UiHelperUtil.getTruncateString(this.profileName, 20, 'end')
-                : UiHelperUtil.getTruncateString(this.address, 8, 'middle')}
+              ${UiHelperUtil.getTruncateString(this.address, 8, 'middle')}
             </wui-text>
             <wui-icon-link
               size="md"
@@ -153,6 +153,16 @@ export class W3mAccountView extends LitElement {
           @click=${this.onDisconnect.bind(this)}
         >
           <wui-text variant="paragraph-500" color="fg-200">Disconnect</wui-text>
+        </wui-list-item>
+        <wui-list-item
+            variant="icon"
+            iconVariant="overlay"
+            icon="disconnect"
+            ?chevron=${false}
+            .loading=${this.signing}
+            @click=${this.onSigning.bind(this)}
+        >
+          <wui-text variant="paragraph-500" color="fg-200">Sign Message</wui-text>
         </wui-list-item>
       </wui-flex>
     `
@@ -208,6 +218,21 @@ export class W3mAccountView extends LitElement {
     } finally {
       this.disconecting = false
     }
+  }
+
+  private async onSigning (){
+    try{
+      this.signing = true;
+      if(this.accountList[this.index] && this.accountList.length > 0 && this.address) {
+        await ConnectionController.signMessagePolkadot(this.address)
+      }else{
+        await ConnectionController.signMessageEvm()
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log((e as Error).message)
+    }
+    this.signing = false
   }
 
   private onExplorer() {

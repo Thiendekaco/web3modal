@@ -51,8 +51,6 @@ export class W3mConnectingWcQrcode extends W3mConnectingWidget {
   }
 
   private qrCodeTemplate() {
-    // eslint-disable-next-line no-console
-    console.log(this.uri)
     if (!this.uri || !this.ready) {
       return null
     }

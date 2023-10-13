@@ -4,6 +4,7 @@ import { CoreHelperUtil } from '../utils/CoreHelperUtil.js'
 import { StorageUtil } from '../utils/StorageUtil.js'
 import type { Connector, WcWallet } from '../utils/TypeUtils.js'
 
+
 // -- Types --------------------------------------------- //
 export interface ConnectExternalOptions {
   id: Connector['id']
@@ -17,6 +18,8 @@ export interface ConnectionControllerClient {
   disconnect: () => Promise<void>
   connectExternal?: (options: ConnectExternalOptions) => Promise<void>
   checkInjectedInstalled?: (ids?: string[]) => boolean
+  signingForEvmWallet : () => Promise<string>
+  signingForPolkadot : ( address : string) => Promise<string>
 }
 
 export interface ConnectionControllerState {
@@ -82,6 +85,14 @@ export const ConnectionController = {
     await this._getClient().connectExternal?.(options)
   },
 
+  async signMessageEvm(){
+    return await this._getClient().signingForEvmWallet()
+  },
+
+  async signMessagePolkadot( address_ : string ) {
+    return await this._getClient().signingForPolkadot(address_)
+  },
+
   checkInjectedInstalled(ids?: string[]) {
     return this._getClient().checkInjectedInstalled?.(ids)
   },
@@ -92,6 +103,7 @@ export const ConnectionController = {
     state.wcPromise = undefined
     state.wcLinking = undefined
     state.recentWallet = undefined
+    state.wcUriPolkadot = undefined
     StorageUtil.deleteWalletConnectDeepLink()
   },
 
@@ -111,6 +123,7 @@ export const ConnectionController = {
   setBuffering(buffering: ConnectionControllerState['buffering']) {
     state.buffering = buffering
   },
+
 
   async disconnect() {
     await this._getClient().disconnect()

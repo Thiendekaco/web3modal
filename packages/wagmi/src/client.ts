@@ -9,7 +9,8 @@ import {
   getNetwork,
   switchNetwork,
   watchAccount,
-  watchNetwork
+  watchNetwork,
+  signMessage
 } from '@wagmi/core'
 import {mainnet} from '@wagmi/core/chains'
 import type { SessionTypes } from "@walletconnect/types";
@@ -26,7 +27,7 @@ import type {
   PublicStateControllerState,
   Token
 } from '@web3modal/scaffold'
-import { Web3ModalScaffold} from '@web3modal/scaffold'
+import {Web3ModalScaffold} from '@web3modal/scaffold'
 import type { EIP6963Connector } from './connectors/EIP6963Connector.js'
 import {
   ADD_CHAIN_METHOD,
@@ -91,11 +92,11 @@ interface Wallet {
 export class Web3Modal extends Web3ModalScaffold {
   private hasSyncedConnectedAccount = false
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private walletConnectSession : SessionTypes.Struct | undefined;
 
-  private options: Web3ModalClientOptions | undefined = undefined
+  private options: Web3ModalClientOptions | undefined = undefined;
 
+  private universalProvider : UniversalProvider | undefined = undefined;
 
   public constructor(options: Web3ModalClientOptions) {
     const { wagmiConfig, chains, defaultChain, tokens, _sdkVersion, chainsPolkadot, ...w3mOptions } = options
@@ -145,6 +146,7 @@ export class Web3Modal extends Web3ModalScaffold {
     }
 
     const connectionControllerClient: ConnectionControllerClient = {
+
       connectWalletConnect: async onUri => {
         const connector = wagmiConfig.connectors.find(c => c.id === WALLET_CONNECT_CONNECTOR_ID)
         if (!connector) {
@@ -160,12 +162,13 @@ export class Web3Modal extends Web3ModalScaffold {
 
         const chainId = caipNetworkIdToNumber(this.getCaipNetwork()?.id)
 
+
         await connect({ connector, chainId })
 
       },
 
       connectWalletConnect4Polkadot: async onUri => {
-        const provider = await UniversalProvider.init({
+        this.universalProvider = await UniversalProvider.init({
           projectId: w3mOptions.projectId,
           relayUrl: 'wss://relay.walletconnect.com'
         })
@@ -182,7 +185,7 @@ export class Web3Modal extends Web3ModalScaffold {
           }
         }
 
-        const { uri, approval } = await provider.client.connect(params)
+        const { uri, approval } = await this.universalProvider.client.connect(params)
         // eslint-disable-next-line no-unused-expressions
         uri && onUri( uri )
         this.walletConnectSession = await approval();
@@ -191,6 +194,7 @@ export class Web3Modal extends Web3ModalScaffold {
       },
 
       connectExternal: async ({ id, provider, info }) => {
+
         const connector = wagmiConfig.connectors.find(c => c.id === id)
         if (!connector) {
           throw new Error('connectionControllerClient:connectExternal - connector is undefined')
@@ -204,7 +208,7 @@ export class Web3Modal extends Web3ModalScaffold {
         await connect({ connector, chainId })
       },
 
-      checkInjectedInstalled(ids) {
+      checkInjectedInstalled : (ids) =>{
         if (!window?.ethereum) {
           return false
         }
@@ -216,7 +220,38 @@ export class Web3Modal extends Web3ModalScaffold {
         return ids.some(id => Boolean(window.ethereum?.[String(id)]))
       },
 
-      disconnect
+       disconnect: async() =>{
+        if(this.walletConnectSession) {
+          await this.universalProvider?.client.disconnect({ topic : this.walletConnectSession?.pairingTopic, reason : {
+              code: 0,
+              message: 'Disconnect failed'
+            }});
+          this.walletConnectSession = undefined
+          this.resetAccountPolkadot()
+        }else{
+          await disconnect();
+        }
+      },
+
+      signingForEvmWallet : async() => await signMessage({ message : 'Hello Im from SubWallet' }),
+
+      signingForPolkadot : async (address : string) =>{
+        if(!this.walletConnectSession) {return '';}
+
+
+return  `${await this.universalProvider?.client.request({
+          topic: this.walletConnectSession.topic,
+          request: {
+            method: 'polkadot_signMessage',
+            params: {
+              address,
+              data: 'Hello Im from Subwallet',
+              type: 'bytes'
+            }
+          },
+          chainId: `polkadot:${Network4PolkadotUtil['polkadot']}`
+        })
+      }`}
     }
 
     super({
@@ -231,13 +266,10 @@ export class Web3Modal extends Web3ModalScaffold {
     this.options = options
 
     this.syncRequestedNetworks(chains)
-
     this.syncConnectors(wagmiConfig.connectors)
     this.listenConnectors(wagmiConfig.connectors)
-
-      watchAccount(() => this.syncAccount())
-      watchNetwork(() => this.syncNetwork())
-
+    watchAccount(() => this.syncAccount())
+    watchNetwork(() => this.syncNetwork())
 
   }
 
@@ -282,6 +314,7 @@ export class Web3Modal extends Web3ModalScaffold {
 
     const { chain } = getNetwork()
     this.resetAccount()
+    this.resetAccountPolkadot()
     if (isConnected && address && chain) {
       const caipAddress: CaipAddress = `${NAMESPACE}:${chain.id}:${address}`
       this.setIsConnected(isConnected)
@@ -311,6 +344,7 @@ export class Web3Modal extends Web3ModalScaffold {
 
     if(walletConnectAccount.length > 0  && this.options?.chainsPolkadot[0] ){
       this.resetAccount()
+      this.resetAccountPolkadot()
          walletAccountfillter.forEach(  ( account, index) => {
           const caipAddress: CaipAddress = `polkadot:${CAIPId}:${account}`
           this.getApprovedCaipNetworksData()
@@ -319,7 +353,7 @@ export class Web3Modal extends Web3ModalScaffold {
             isConnected : true,
             caipAddress,
             address: account,
-            balance: '0x0',
+            balance: '0',
             profileName: `Account ${index + 1}`
           })
         })
@@ -400,6 +434,7 @@ export class Web3Modal extends Web3ModalScaffold {
 
   private syncConnectors(connectors: Web3ModalClientOptions['wagmiConfig']['connectors']) {
     const w3mConnectors: Connector[] = []
+
     connectors.forEach(({ id, name }) => {
       if (id !== EIP6963_CONNECTOR_ID) {
         w3mConnectors.push({
@@ -413,7 +448,7 @@ export class Web3Modal extends Web3ModalScaffold {
       }
       if(id === WALLET_CONNECT_CONNECTOR_ID){
         w3mConnectors.push({
-          id : 'WALLET_CONNECT_POLKADOT',
+          id : 'walletConnectPolkadot',
           explorerId: ConnectorExplorerIds[id],
           imageId: ConnectorImageIds[id],
           imageUrl: this.options?.connectorImages?.[id],
